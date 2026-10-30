@@ -50,6 +50,7 @@ SPEC: dict[str, tuple[float, float, float]] = {
     "dis_margin_K": (1.0, 0.0, 8.0),       # heating discharge target below the 308.15 K cap
     "water_margin": (1.2, 0.8, 3.0),       # multiplier on the modeled coil water flow
     "f_floor": (0.0316, 0.0316, 0.3),      # minimum zone flow fraction (damper floor at 200 Pa)
+    "sat_econ_K": (288.0, 285.0, 295.0),   # economizer mixed-air target when outside air is useful
 }
 
 DEFAULTS: dict[str, float] = {k: v[0] for k, v in SPEC.items()}

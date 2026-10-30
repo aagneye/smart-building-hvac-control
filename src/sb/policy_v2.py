@@ -106,14 +106,22 @@ class ControllerV2(ControllerV1):
         zone_on = on[L.zone_ahu]
 
         # ---- supply air temperature, economizer, actual supply temperature
+        # Three regimes per AHU:
+        #   no cooling demand      chiller off (setpoint at max), minimum outside air
+        #   outside air is useful  economizer blends the mix down to sat_econ_K,
+        #                          the chiller only trims what is left
+        #   outside air is hot     coldest setpoint, so the least air (and the least
+        #                          outside air to cool) carries the cooling
         cool_max = self._per_ahu_max(cool)
-        sat = np.clip(p["sat_idle_K"] - cool_max * (p["sat_idle_K"] - p["sat_cool_K"]), SAT_MIN, SAT_MAX)
         t_ret = np.array([t[self.member[k]].mean() for k in range(K)])
         oat = s.oat
-        econ = (oat < t_ret - p["econ_margin_K"]) & (cool_max > 0)
+        need_cool = cool_max > 0
+        econ = need_cool & (oat < t_ret - p["econ_margin_K"])
         with np.errstate(divide="ignore", invalid="ignore"):
-            r_mix = (sat - oat) / (t_ret - oat)
-        recirc = np.where(econ, np.clip(np.nan_to_num(r_mix, nan=RECIRC_MAX), 0.0, RECIRC_MAX), RECIRC_MAX)
+            r_econ = (p["sat_econ_K"] - oat) / (t_ret - oat)
+        recirc = np.where(econ, np.clip(np.nan_to_num(r_econ, nan=RECIRC_MAX), 0.0, RECIRC_MAX), RECIRC_MAX)
+        sat = np.where(econ, p["sat_econ_K"], np.where(need_cool, p["sat_cool_K"], SAT_MAX))
+        sat = np.clip(sat, SAT_MIN, SAT_MAX)
         t_mix = recirc * t_ret + (1.0 - recirc) * oat
         t_sa_z = np.minimum(t_mix, sat)[L.zone_ahu]
 
