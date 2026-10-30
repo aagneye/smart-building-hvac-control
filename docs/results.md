@@ -9,6 +9,7 @@ computed with `src/sb/eval/harness.py` on the current starter kit.
 |---|---|---|---|---|
 | 2026-10-30 | pid_water (kit baseline) | — | 0.0550 | reference |
 | 2026-10-30 | ControllerV1 | defaults (Kp 0.07, Ki 0.0035) | 0.0194 | comfort ≈ 0.0005; energy dominates, Fairbanks worst |
+| 2026-10-30 | ControllerV2 + `params/v2_tuned_g22.json` (CMA-ES run tune_v2_a) | 0.00788 | comfort ≈ 0.0003; slowest step 1.26 ms |
 
 Per station, ControllerV1 vs pid_water: atlanta 0.0118 vs 0.0306, denver
 0.0142 vs 0.0379, fairbanks 0.0512 vs 0.0791, phoenix 0.0122 vs 0.0800,
@@ -26,3 +27,13 @@ train_5/atlanta_6, train_7/denver_5, train_8/phoenix_4 (2016 steps).
 | 2026-10-30 | ControllerV1, defaults | 0.0319 | |
 | 2026-10-30 | ControllerV2 | 0.0198 | Fairbanks 0.145 → 0.067; Phoenix worse than v1 |
 | 2026-10-30 | ControllerV2, regime-based supply air | 0.0173 | beats v1 on all 6; Fairbanks unchanged at 0.067 |
+
+Per station, tuned v2 vs v1 (full 30 days): atlanta 0.0050 vs 0.0118, denver
+0.0044 vs 0.0142, fairbanks 0.0163 vs 0.0512, phoenix 0.0076 vs 0.0122,
+singapore 0.0061 vs 0.0079.
+
+## Gateway parity
+
+The built notebook run through the real Kaggle gateway (competition data,
+`scripts/test_notebook_gateway.py`) gave −0.000685 on the first day of
+building_train_1/atlanta_2; the harness gives −0.00069 on the same day.
