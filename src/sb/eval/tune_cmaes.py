@@ -8,7 +8,8 @@ Parameters are searched in a [0, 1] box mapped onto the bounds in params.SPEC.
         --train building_train_1 building_train_2 building_train_4 building_train_5 \
         --holdout building_train_7 building_train_8 --generations 40
 
-Writes runs/<name>/best.json (best params so far), history.csv and holdout.csv.
+Writes runs/<name>/best.json (best params so far), mean.json (CMA-ES distribution
+mean, updated each generation), history.csv and holdout.csv.
 """
 
 from __future__ import annotations
@@ -95,6 +96,10 @@ def main(argv=None):
             cands = [to_params(x, names, base) for x in xs]
             scores = score_candidates(pool, cands, train, args.steps, args.policy)
             es.tell(xs, scores)
+            # The distribution mean is usually a less lucky, better generalizing
+            # pick than the single best sample; keep it alongside best.json.
+            mean = to_params(np.asarray(es.mean), names, base)
+            (out / "mean.json").write_text(json.dumps({k: mean[k] for k in names} | {"_generation": gen}, indent=1))
             i = int(np.argmin(scores))
             if scores[i] < best[0]:
                 best = (scores[i], cands[i])
