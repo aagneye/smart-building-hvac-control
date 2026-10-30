@@ -25,3 +25,4 @@ train_5/atlanta_6, train_7/denver_5, train_8/phoenix_4 (2016 steps).
 | 2026-10-30 | ControllerV1, high gains (Kp 0.35) | — | oscillated between full heat and cool |
 | 2026-10-30 | ControllerV1, defaults | 0.0319 | |
 | 2026-10-30 | ControllerV2 | 0.0198 | Fairbanks 0.145 → 0.067; Phoenix worse than v1 |
+| 2026-10-30 | ControllerV2, regime-based supply air | 0.0173 | beats v1 on all 6; Fairbanks unchanged at 0.067 |
