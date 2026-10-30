@@ -63,7 +63,7 @@ class ControllerV2(ControllerV1):
         # ---- schedule (as v1)
         if s.dow != self.last_dow:
             self.last_dow, self.occ_seen_today = s.dow, False
-        if s.occupancy > 0.5:
+        if self._people_present(s.occupancy):
             self.occ_seen_today = True
         occupied = s.comfort_now
         if occupied and s.hour >= p["holiday_check_h"] and not self.occ_seen_today:

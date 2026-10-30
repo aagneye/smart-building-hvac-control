@@ -50,6 +50,7 @@ class ControllerV1:
         self.ahu_on = np.zeros(K, dtype=bool)
         self.ahu_on_steps = np.zeros(K, dtype=np.int64)
         self.occ_seen_today = False
+        self.occ_min = np.inf
         self.last_dow = -1
         self.comfort_lo, self.comfort_hi = self.L.comfort_window
         # zone membership matrix (K, V) for fast per-AHU max
@@ -66,6 +67,17 @@ class ControllerV1:
         if hour >= m and nxt < 5:
             return 24.0 - hour + m
         return np.inf
+
+    def _people_present(self, occupancy: float) -> bool:
+        """True when anyone is in the building, whatever the occupancy scaling.
+
+        The feature is a raw head count today, but the gateway tries to set a
+        normalization constant (n - c) / (c + 1) that would make an empty
+        building read negative. The building is empty every night, so compare
+        against the lowest value seen instead of a fixed threshold.
+        """
+        self.occ_min = min(self.occ_min, occupancy)
+        return occupancy > self.occ_min + 1e-4
 
     def _per_ahu_max(self, x: np.ndarray) -> np.ndarray:
         return np.where(self.member, x[None, :], -np.inf).max(axis=1)
@@ -85,7 +97,7 @@ class ControllerV1:
         # ---- 1. schedule
         if s.dow != self.last_dow:
             self.last_dow, self.occ_seen_today = s.dow, False
-        if s.occupancy > 0.5:
+        if self._people_present(s.occupancy):
             self.occ_seen_today = True
         occupied = s.comfort_now
         if occupied and s.hour >= p["holiday_check_h"] and not self.occ_seen_today:
