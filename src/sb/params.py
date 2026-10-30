@@ -44,6 +44,12 @@ SPEC: dict[str, tuple[float, float, float]] = {
     "unocc_lo_K": (287.0, 278.0, 293.0),   # unoccupied: heat if any zone below this
     "unocc_hi_K": (303.0, 298.0, 312.0),   # unoccupied: cool if any zone above this
     "holiday_check_h": (10.0, 8.0, 13.0),  # weekday hour by which zero occupancy means holiday
+    # --- v2 model-based sizing
+    "q_heat_max_W": (15000.0, 2000.0, 40000.0),  # zone heat rate at full heating demand
+    "q_cool_max_W": (15000.0, 2000.0, 40000.0),  # zone cooling rate at full cooling demand
+    "dis_margin_K": (1.0, 0.0, 8.0),       # heating discharge target below the 308.15 K cap
+    "water_margin": (1.2, 0.8, 3.0),       # multiplier on the modeled coil water flow
+    "f_floor": (0.0316, 0.0316, 0.3),      # minimum zone flow fraction (damper floor at 200 Pa)
 }
 
 DEFAULTS: dict[str, float] = {k: v[0] for k, v in SPEC.items()}
