@@ -34,7 +34,7 @@ bash scripts/sync.sh
 ```bash
 ssh azureuser@20.51.160.183
 cd /data/smartbuild && . .venv/bin/activate
-python -m sb.eval.harness --policy sb.policy:ControllerV1 --params params/lowgain.json --workers 30 --name v1
+python -m sb.eval.harness --policy sb.policy:ControllerV1 --workers 30 --name v1
 ```
 
 Add `--include building_train_8 --steps 2016` for a quick one-week check on

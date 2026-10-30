@@ -11,10 +11,12 @@ SPEC: dict[str, tuple[float, float, float]] = {
     # --- comfort targets during active (occupied / pre-start) mode
     "margin_lo_K": (0.6, 0.0, 1.5),        # target lower edge = comfort_lo + margin
     "margin_hi_K": (0.6, 0.0, 1.5),        # target upper edge = comfort_hi - margin
-    "lag_comp": (0.5, 0.0, 1.5),           # extrapolate zone temp by lag_comp * last delta
+    "lag_comp": (0.0, 0.0, 1.5),           # extrapolate zone temp by lag_comp * last delta
     # --- per-zone PI demand (positive = heat, negative = cool)
-    "kp": (0.35, 0.02, 2.0),               # demand per K of error
-    "ki": (0.02, 0.0005, 0.2),             # demand per K per step
+    # Zone air settles in ~2.5 min at full flow, faster than the 5-min step, and
+    # the sensor lags a step, so high gains oscillate between full heat and cool.
+    "kp": (0.07, 0.01, 0.5),               # demand per K of error
+    "ki": (0.0035, 0.0002, 0.05),          # demand per K per step
     "i_leak": (0.002, 0.0, 0.05),          # integrator leak per step while in band
     # --- flow allocation (fraction of 2 m3/s design flow at 2000 Pa)
     "f_idle": (0.08, 0.03, 0.4),           # zone in band
