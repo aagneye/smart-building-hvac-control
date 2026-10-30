@@ -46,8 +46,15 @@ def discover(root: Path, include: list[str] | None) -> list[Path]:
     return dirs
 
 
-def run_scenario(scenario_dir: str, policy_spec: str, params: dict | None, steps: int, occupancy_seed: int | None) -> dict:
-    """Run a single episode. Executed in a worker process."""
+def run_scenario(scenario_dir: str, policy_spec: str, params: dict | None, steps: int, occupancy_seed: int | None,
+                 occupancy_norm: float | None = None) -> dict:
+    """Run a single episode. Executed in a worker process.
+
+    occupancy_norm, when given, sets the environment's occupancy normalization
+    constant c, so the occupancy feature reads (n - c) / (c + 1). The Kaggle
+    gateway tries to set c = 125 but writes a misspelled attribute, so today it
+    reads raw counts; this lets us check robustness to the fixed version.
+    """
     import numpy as np
     import gin
     from smart_buildings import evaluate as ev
@@ -62,6 +69,9 @@ def run_scenario(scenario_dir: str, policy_spec: str, params: dict | None, steps
     from smart_buildings.smart_control.environment import hybrid_action_environment
 
     env = hybrid_action_environment.HybridActionEnvironment()
+    env.metrics_path = None  # as the Kaggle gateway does
+    if occupancy_norm is not None:
+        env.occupancy_normalization_constant = float(occupancy_norm)
     meta = ev.create_building_meta_data(env, scenario_dir)
     spec = env.action_spec()
 
@@ -119,10 +129,12 @@ def run_scenario(scenario_dir: str, policy_spec: str, params: dict | None, steps
 
 
 def evaluate(scenarios: list[Path], policy_spec: str, params: dict | None, steps: int,
-             workers: int, occupancy_seed: int | None = None, verbose: bool = True) -> dict:
+             workers: int, occupancy_seed: int | None = None, verbose: bool = True,
+             occupancy_norm: float | None = None) -> dict:
     results = []
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        futs = {pool.submit(run_scenario, str(s), policy_spec, params, steps, occupancy_seed): s for s in scenarios}
+        futs = {pool.submit(run_scenario, str(s), policy_spec, params, steps, occupancy_seed, occupancy_norm): s
+                for s in scenarios}
         for fut in as_completed(futs):
             try:
                 res = fut.result()
@@ -152,6 +164,7 @@ def main(argv=None):
     p.add_argument("--steps", type=int, default=8640)
     p.add_argument("--workers", type=int, default=30)
     p.add_argument("--occupancy-seed", type=int)
+    p.add_argument("--occupancy-norm", type=float, help="occupancy normalization constant c, e.g. 125")
     p.add_argument("--name", default=None, help="run name; results go to runs/<name>.json")
     args = p.parse_args(argv)
 
@@ -159,9 +172,11 @@ def main(argv=None):
     params = json.loads(Path(args.params).read_text()) if args.params else None
     print(f"Evaluating {args.policy} on {len(scenarios)} scenarios, {args.steps} steps, {args.workers} workers", flush=True)
     t0 = time.time()
-    out = evaluate(scenarios, args.policy, params, args.steps, args.workers, args.occupancy_seed)
+    out = evaluate(scenarios, args.policy, params, args.steps, args.workers, args.occupancy_seed,
+                   occupancy_norm=args.occupancy_norm)
     out.update({"policy": args.policy, "params": params, "steps": args.steps,
                 "scenarios_root": args.scenarios, "occupancy_seed": args.occupancy_seed,
+                "occupancy_norm": args.occupancy_norm,
                 "elapsed_s": time.time() - t0})
     print(f"\nSCORE {out['score']:.6f}  ({out['n_ok']}/{out['n_total']} ok, {out['elapsed_s']:.0f}s)")
     if args.name:
