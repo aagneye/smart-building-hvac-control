@@ -24,7 +24,7 @@ import numpy as np
 from sb import params as P
 from sb.eval.harness import DEFAULT_SCENARIOS, RUNS, discover, run_scenario
 
-POLICY = "sb.policy:ControllerV1"
+POLICY = "sb.policy:ControllerV1"  # default; override with --policy
 
 
 def to_params(x: np.ndarray, names: list[str], base: dict) -> dict:
@@ -39,8 +39,8 @@ def to_unit(p: dict, names: list[str]) -> np.ndarray:
     return np.array([(p[n] - P.SPEC[n][1]) / (P.SPEC[n][2] - P.SPEC[n][1]) for n in names])
 
 
-def score_candidates(pool, cands: list[dict], scenarios: list[Path], steps: int) -> list[float]:
-    futs = [[pool.submit(run_scenario, str(s), POLICY, c, steps, None) for s in scenarios] for c in cands]
+def score_candidates(pool, cands: list[dict], scenarios: list[Path], steps: int, policy: str = POLICY) -> list[float]:
+    futs = [[pool.submit(run_scenario, str(s), policy, c, steps, None) for s in scenarios] for c in cands]
     scores = []
     for row in futs:
         vals = []
@@ -58,6 +58,7 @@ def main(argv=None):
 
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--name", required=True)
+    ap.add_argument("--policy", default=POLICY, help="module:Class to tune")
     ap.add_argument("--train", nargs="+", required=True, help="building names or building/weather prefixes")
     ap.add_argument("--holdout", nargs="*", default=[])
     ap.add_argument("--scenarios", default=str(DEFAULT_SCENARIOS))
@@ -85,14 +86,14 @@ def main(argv=None):
     best = (np.inf, base)
     hist = open(out / "history.csv", "a")
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
-        base_score = score_candidates(pool, [base], train, args.steps)[0]
+        base_score = score_candidates(pool, [base], train, args.steps, args.policy)[0]
         print(f"start score {base_score:.6f}", flush=True)
         best = (base_score, base)
         for gen in range(1, args.generations + 1):
             t0 = time.time()
             xs = es.ask()
             cands = [to_params(x, names, base) for x in xs]
-            scores = score_candidates(pool, cands, train, args.steps)
+            scores = score_candidates(pool, cands, train, args.steps, args.policy)
             es.tell(xs, scores)
             i = int(np.argmin(scores))
             if scores[i] < best[0]:
@@ -102,7 +103,7 @@ def main(argv=None):
             hist.flush()
             print(f"gen {gen:3d} min {min(scores):.6f} median {np.median(scores):.6f} best {best[0]:.6f} ({time.time() - t0:.0f}s)", flush=True)
             if holdout and gen % args.holdout_every == 0:
-                h = score_candidates(pool, [best[1]], holdout, args.steps)[0]
+                h = score_candidates(pool, [best[1]], holdout, args.steps, args.policy)[0]
                 with open(out / "holdout.csv", "a") as f:
                     f.write(f"{gen},{best[0]:.6f},{h:.6f}\n")
                 print(f"  holdout {h:.6f} (train {best[0]:.6f})", flush=True)
