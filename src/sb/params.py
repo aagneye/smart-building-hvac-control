@@ -60,6 +60,8 @@ NAMES: list[str] = list(SPEC)
 def merged(overrides: dict | None) -> dict[str, float]:
     p = dict(DEFAULTS)
     if overrides:
+        # Keys starting with "_" are metadata from the tuner (_score, _generation).
+        overrides = {k: v for k, v in overrides.items() if not k.startswith("_")}
         unknown = set(overrides) - set(SPEC)
         if unknown:
             raise KeyError(f"unknown params: {sorted(unknown)}")
