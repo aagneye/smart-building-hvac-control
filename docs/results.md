@@ -37,3 +37,9 @@ singapore 0.0061 vs 0.0079.
 The built notebook run through the real Kaggle gateway (competition data,
 `scripts/test_notebook_gateway.py`) gave −0.000685 on the first day of
 building_train_1/atlanta_2; the harness gives −0.00069 on the same day.
+
+## Kaggle submissions
+
+| Date | Notebook version | Policy | Params | Public LB | Notes |
+|---|---|---|---|---|---|
+| 2026-10-30 | aagneye/sb-hvac-controller-v2 v1 | ControllerV2 | `params/v2_tuned_g22.json` | pending | submission 57814383; commit run scored −0.003703 on the example scenario (harness −0.00369) |
