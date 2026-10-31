@@ -3,6 +3,7 @@
 #
 #   ssh azureuser@20.51.160.183 'bash /data/smartbuild/scripts/run_wide_tuning.sh'
 #   ssh azureuser@20.51.160.183 'bash /data/smartbuild/scripts/run_wide_tuning.sh --resume'   # after a reboot
+#   ssh azureuser@20.51.160.183 'bash /data/smartbuild/scripts/run_wide_tuning.sh --tune'     # tuner only
 #
 # First scores the submitted parameters and the defaults on the holdout set
 # (unseen buildings and unseen climates), then tunes from the submitted set.
@@ -22,11 +23,18 @@ ONLY="margin_lo_K margin_hi_K lag_comp kp ki i_leak sat_cool_K sat_econ_K ahu_on
 TUNE="python -m sb.eval.tune_cmaes --name tune_v2_wide --policy sb.policy_v2:ControllerV2 --scenarios $S
       --train $TRAIN --holdout $HOLDOUT --steps 2016 --popsize 12 --sigma 0.2 --workers 58
       --generations 30 --holdout-every 5 --start params/v2_tuned_g22.json --only $ONLY"
+# One line, so it survives being embedded in `bash -c "..."` below.
+TUNE=$(echo $TUNE)
 mkdir -p logs runs
 
 if [ "${1:-}" = "--resume" ]; then
   nohup $TUNE --resume >> logs/tune_v2_wide.log 2>&1 < /dev/null &
   echo "resumed tune_v2_wide"
+  exit 0
+fi
+if [ "${1:-}" = "--tune" ]; then  # tuner only, holdout baselines already done
+  nohup $TUNE > logs/tune_v2_wide.log 2>&1 < /dev/null &
+  echo "started tune_v2_wide"
   exit 0
 fi
 
