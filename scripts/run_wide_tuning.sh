@@ -8,6 +8,7 @@
 # First scores the submitted parameters and the defaults on the holdout set
 # (unseen buildings and unseen climates), then tunes from the submitted set.
 # Logs: logs/wide_holdout_*.log, logs/tune_v2_wide.log; results: runs/tune_v2_wide/.
+# Runs at nice 10: the VM is shared with GPU serving and fine-tuning jobs.
 set -euo pipefail
 cd /data/smartbuild
 . .venv/bin/activate
@@ -20,7 +21,7 @@ ONLY="margin_lo_K margin_hi_K lag_comp kp ki i_leak sat_cool_K sat_econ_K ahu_on
       ahu_min_on_steps econ_margin_K tw_cold_K tw_warm_K oat_cold_K oat_warm_K dp_min_frac
       rate_heat_K_per_h rate_cool_K_per_h prestart_buffer_h prestart_max_h unocc_lo_K unocc_hi_K
       holiday_check_h q_heat_max_W q_cool_max_W dis_margin_K water_margin f_floor"
-TUNE="python -m sb.eval.tune_cmaes --name tune_v2_wide --policy sb.policy_v2:ControllerV2 --scenarios $S
+TUNE="nice -n 10 python -m sb.eval.tune_cmaes --name tune_v2_wide --policy sb.policy_v2:ControllerV2 --scenarios $S
       --train $TRAIN --holdout $HOLDOUT --steps 2016 --popsize 12 --sigma 0.2 --workers 58
       --generations 30 --holdout-every 5 --start params/v2_tuned_g22.json --only $ONLY"
 # One line, so it survives being embedded in `bash -c "..."` below.
@@ -38,7 +39,7 @@ if [ "${1:-}" = "--tune" ]; then  # tuner only, holdout baselines already done
   exit 0
 fi
 
-BASE="python -m sb.eval.harness --policy sb.policy_v2:ControllerV2 --scenarios $S --include $HOLDOUT --steps 2016 --workers 16"
+BASE="nice -n 10 python -m sb.eval.harness --policy sb.policy_v2:ControllerV2 --scenarios $S --include $HOLDOUT --steps 2016 --workers 16"
 nohup bash -c "
   $BASE --params params/v2_tuned_g22.json --name wide_holdout_g22 > logs/wide_holdout_g22.log 2>&1 &
   $BASE --name wide_holdout_defaults > logs/wide_holdout_defaults.log 2>&1 &
