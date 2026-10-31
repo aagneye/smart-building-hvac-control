@@ -9,13 +9,16 @@ Parameters are searched in a [0, 1] box mapped onto the bounds in params.SPEC.
         --holdout building_train_7 building_train_8 --generations 40
 
 Writes runs/<name>/best.json (best params so far), mean.json (CMA-ES distribution
-mean, updated each generation), history.csv and holdout.csv.
+mean, updated each generation), history.csv and holdout.csv, plus state.pkl, a
+checkpoint after every generation. Rerun the same command with --resume to
+continue after an interruption such as a VM reboot.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import pickle
 import time
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
@@ -71,6 +74,8 @@ def main(argv=None):
     ap.add_argument("--start", help="JSON params to start from (defaults otherwise)")
     ap.add_argument("--only", nargs="*", help="tune only these parameter names")
     ap.add_argument("--holdout-every", type=int, default=5)
+    ap.add_argument("--resume", action="store_true",
+                    help="continue from runs/<name>/state.pkl after an interruption such as a reboot")
     args = ap.parse_args(argv)
 
     root = Path(args.scenarios)
@@ -78,19 +83,27 @@ def main(argv=None):
     holdout = discover(root, args.holdout) if args.holdout else []
     out = RUNS / args.name
     out.mkdir(parents=True, exist_ok=True)
+    state_path = out / "state.pkl"
     base = P.merged(json.loads(Path(args.start).read_text()) if args.start else None)
     names = args.only or P.NAMES
-    x0 = to_unit(base, names)
-    es = cma.CMAEvolutionStrategy(x0, args.sigma, {"bounds": [0, 1], "popsize": args.popsize, "seed": 1, "verbose": -9})
+    if args.resume and state_path.exists():
+        state = pickle.loads(state_path.read_bytes())
+        es, best, names, base = state["es"], state["best"], state["names"], state["base"]
+        first_gen = state["gen"] + 1
+        print(f"resumed {args.name} at generation {first_gen}, best {best[0]:.6f}", flush=True)
+    else:
+        es = cma.CMAEvolutionStrategy(to_unit(base, names), args.sigma,
+                                      {"bounds": [0, 1], "popsize": args.popsize, "seed": 1, "verbose": -9})
+        best, first_gen = None, 1
     print(f"tuning {len(names)} params on {len(train)} scenarios ({args.steps} steps), holdout {len(holdout)}", flush=True)
 
-    best = (np.inf, base)
     hist = open(out / "history.csv", "a")
     with ProcessPoolExecutor(max_workers=args.workers) as pool:
-        base_score = score_candidates(pool, [base], train, args.steps, args.policy)[0]
-        print(f"start score {base_score:.6f}", flush=True)
-        best = (base_score, base)
-        for gen in range(1, args.generations + 1):
+        if best is None:
+            base_score = score_candidates(pool, [base], train, args.steps, args.policy)[0]
+            print(f"start score {base_score:.6f}", flush=True)
+            best = (base_score, base)
+        for gen in range(first_gen, args.generations + 1):
             t0 = time.time()
             xs = es.ask()
             cands = [to_params(x, names, base) for x in xs]
@@ -112,6 +125,10 @@ def main(argv=None):
                 with open(out / "holdout.csv", "a") as f:
                     f.write(f"{gen},{best[0]:.6f},{h:.6f}\n")
                 print(f"  holdout {h:.6f} (train {best[0]:.6f})", flush=True)
+            # Checkpoint last, so a resumed run never repeats a logged generation.
+            tmp = state_path.with_suffix(".tmp")
+            tmp.write_bytes(pickle.dumps({"es": es, "best": best, "names": names, "base": base, "gen": gen}))
+            tmp.replace(state_path)
     print(f"best {best[0]:.6f} -> {out / 'best.json'}")
 
 
