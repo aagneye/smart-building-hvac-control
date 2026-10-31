@@ -43,3 +43,22 @@ building_train_1/atlanta_2; the harness gives −0.00069 on the same day.
 | Date | Notebook version | Policy | Params | Public LB | Notes |
 |---|---|---|---|---|---|
 | 2026-10-30 | aagneye/sb-hvac-controller-v2 v1 | ControllerV2 | `params/v2_tuned_g22.json` | 0.01129 | submission 57814383, vs 0.00788 on the training 30; commit run scored −0.003703 on the example scenario (harness −0.00369) |
+
+## Wide holdout: unseen buildings and unseen climates (first week)
+
+Set from `scripts/make_wide_set.py`: 4 new training-sized buildings x 3 held-out
+synthetic climates (hot tropic, high altitude, mild marine) + 2 large buildings.
+
+| Date | Policy | Params | Holdout score |
+|---|---|---|---|
+| 2026-10-31 | ControllerV2 | defaults | 0.00773 |
+| 2026-10-31 | ControllerV2 | `params/v2_tuned_g22.json` (submitted) | 0.00642 |
+
+Worst holdout scenario: large building_0502 in the hot tropic climate (0.0213,
+comfort part 0.0039). Raising the per-zone cooling cap `q_cool_max_W` from
+9.7 kW to 20 kW cut it to 0.0183 with comfort 0.0002: a fixed watt cap tuned
+on small rooms under-serves big rooms in hot weather.
+
+Tuning run `tune_v2_wide` started 2026-10-31 from the submitted set on 32 wide
+training scenarios (12 new buildings x 2 climates incl. synthetic desert and
+subarctic, + 4 training buildings x 2 unseen strips); start score 0.01293.
