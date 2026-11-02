@@ -46,6 +46,15 @@ class ControllerV2(ControllerV1):
         self.i_vmax = np.array(idx, dtype=np.int64) if all(i is not None for i in idx) else None
         self.vmax: np.ndarray | None = None
 
+    def _zone_rates(self, heat: np.ndarray, cool: np.ndarray, err: np.ndarray,
+                    served: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        """Heating and cooling rate in watts per zone from the PI demand.
+
+        ``served`` marks zones that are active and whose AHU runs. v2 uses one
+        fixed cap for every zone; subclasses may adapt it per zone.
+        """
+        return heat * self.p["q_heat_max_W"], cool * self.p["q_cool_max_W"]
+
     def get_action(self, obs: np.ndarray) -> dict[str, np.ndarray]:
         p, L = self.p, self.L
         o = np.asarray(obs, dtype=np.float64)
@@ -126,8 +135,7 @@ class ControllerV2(ControllerV1):
         t_sa_z = np.minimum(t_mix, sat)[L.zone_ahu]
 
         # ---- air sizing from the heat or cooling rate
-        q_h = heat * p["q_heat_max_W"]
-        q_c = cool * p["q_cool_max_W"]
+        q_h, q_c = self._zone_rates(heat, cool, err, zone_active & zone_on)
         t_dis = T_DIS_MAX - p["dis_margin_K"]
         c_air = np.where(heat > 0, q_h / np.maximum(t_dis - t, 1.0), q_c / np.maximum(t - t_sa_z, 1.0))
         f = np.clip(c_air / RHO_CP_AIR / self.vmax, p["f_floor"], 1.0)
