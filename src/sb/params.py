@@ -51,6 +51,10 @@ SPEC: dict[str, tuple[float, float, float]] = {
     "water_margin": (1.2, 0.8, 3.0),       # multiplier on the modeled coil water flow
     "f_floor": (0.0316, 0.0316, 0.3),      # minimum zone flow fraction (damper floor at 200 Pa)
     "sat_econ_K": (288.0, 285.0, 295.0),   # economizer mixed-air target when outside air is useful
+    # --- v3 adaptive per-zone capacity
+    "cap_rate": (0.02, 0.0, 0.1),          # per-step growth of a saturated zone's capacity scale
+    "cap_relax": (0.002, 0.0, 0.02),       # per-step relaxation of the scale toward 1
+    "cap_max": (3.0, 1.0, 6.0),            # upper limit of the scale
 }
 
 DEFAULTS: dict[str, float] = {k: v[0] for k, v in SPEC.items()}
