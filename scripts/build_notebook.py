@@ -19,7 +19,7 @@ import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-MODULES = ["sb/__init__.py", "sb/obs.py", "sb/params.py", "sb/policy.py", "sb/policy_v2.py"]
+MODULES = ["sb/__init__.py", "sb/obs.py", "sb/params.py", "sb/policy.py", "sb/policy_v2.py", "sb/policy_v3.py"]
 COMP = "neurips-2026-smart-buildings"
 DATA = f"/kaggle/input/competitions/{COMP}"
 # Same image as the official template notebook.
