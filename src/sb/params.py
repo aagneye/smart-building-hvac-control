@@ -55,6 +55,7 @@ SPEC: dict[str, tuple[float, float, float]] = {
     "cap_rate": (0.02, 0.0, 0.1),          # per-step growth of a saturated zone's capacity scale
     "cap_relax": (0.002, 0.0, 0.02),       # per-step relaxation of the scale toward 1
     "cap_max": (3.0, 1.0, 6.0),            # upper limit of the scale
+    "cap_level": (0.98, 0.3, 0.98),        # PI demand at or above which an out-of-band zone grows
 }
 
 DEFAULTS: dict[str, float] = {k: v[0] for k, v in SPEC.items()}
