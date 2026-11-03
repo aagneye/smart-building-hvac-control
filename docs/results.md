@@ -62,3 +62,20 @@ on small rooms under-serves big rooms in hot weather.
 Tuning run `tune_v2_wide` started 2026-10-31 from the submitted set on 32 wide
 training scenarios (12 new buildings x 2 climates incl. synthetic desert and
 subarctic, + 4 training buildings x 2 unseen strips); start score 0.01293.
+
+## 2026-11-02/03 measurements
+
+- `tune_v2_wide` finished 30 generations: training 0.01293 → 0.01205, but its
+  best scored 0.00715 on the wide holdout vs 0.00642 for the submitted set
+  (overfit). Its distribution mean scored 0.00645.
+- ControllerV3 (adaptive per-zone capacity) with the submitted set, wide
+  holdout: 0.00624 (v2 0.00642). On the three hardest holdout scenarios the
+  growth trigger matters: 0.98 → 0.01532, 0.8 → 0.01523, 0.6 → 0.01498
+  (v2 0.01622).
+- First week of train_1/fairbanks_1, total reward: v2-g22 −91.1, v3 at a 0.6
+  trigger −153.3 (heating regression), forum planner −85.4, forum LP bound −79.1.
+- Loss breakdown, v2-g22, 8 official scenarios x 30 days (`scripts/energy_breakdown.py`):
+  warm climates 84% of loss is energy while occupied, 2% comfort, chiller about
+  15x fan electricity; cold climates 58% daytime energy, about a third night and
+  weekend heating, 9% comfort.
+- Public leaderboard 2026-11-03: 10th 0.00568, 50th 0.00720, ours 0.01129 (210th of 526).
