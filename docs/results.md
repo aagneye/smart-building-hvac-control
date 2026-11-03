@@ -82,3 +82,16 @@ subarctic, + 4 training buildings x 2 unseen strips); start score 0.01293.
   15x fan electricity; cold climates 58% daytime energy, about a third night and
   weekend heating, 9% comfort.
 - Public leaderboard 2026-11-03: 10th 0.00568, 50th 0.00720, ours 0.01129 (210th of 526).
+
+## Phase 1 calibration (local, official 30, 30 days)
+
+| Variant | Local score | vs v2-g22 | Public LB |
+|---|---|---|---|
+| v2-g22 (submitted 2026-10-30) | 0.007877 | — | 0.01129 |
+| Probe: margins +0.3 K | 0.008152 | +3.5% | pending |
+| Probe: v2 defaults | 0.011241 | +43% | pending |
+| v3 cooling-first | 0.007879 | +0.0% | pending |
+
+Reading the probes when scores arrive: a margins LB below 0.01129 means the
+hidden test loses comfort; a defaults LB much less than 43% worse means the
+tuning overfits; a v3 LB below 0.01129 means big rooms in heat matter there.
