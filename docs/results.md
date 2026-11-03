@@ -43,6 +43,9 @@ building_train_1/atlanta_2; the harness gives −0.00069 on the same day.
 | Date | Notebook version | Policy | Params | Public LB | Notes |
 |---|---|---|---|---|---|
 | 2026-10-30 | aagneye/sb-hvac-controller-v2 v1 | ControllerV2 | `params/v2_tuned_g22.json` | 0.01129 | submission 57814383, vs 0.00788 on the training 30; commit run scored −0.003703 on the example scenario (harness −0.00369) |
+| 2026-11-03 | aagneye/sb-hvac-probe-margins v1 | ControllerV2 | `params/probe_v2_margins03.json` (g22, margins +0.3 K) | pending | submission 57953403; probe: does the hidden test punish comfort? example scenario −0.0040 |
+| 2026-11-03 | aagneye/sb-hvac-probe-defaults v1 | ControllerV2 | defaults | pending | submission 57953404; probe: does tuning overfit? example scenario −0.0057 |
+| 2026-11-03 | aagneye/sb-hvac-v3 v1 | ControllerV3 | `params/v3_g22_cool.json` | pending | submission 57954055; training-30 0.007879, wide holdout 0.006185, Fairbanks week −91.1 (same as v2); example scenario −0.0037 |
 
 ## Wide holdout: unseen buildings and unseen climates (first week)
 
